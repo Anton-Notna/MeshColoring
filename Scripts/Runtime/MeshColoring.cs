@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using OmicronMeshColoring.Attributes;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -9,16 +10,16 @@ namespace OmicronMeshColoring
     public abstract class MeshColoring : MonoBehaviour
     {
         [Header("Execution cases")]
-        [SerializeField]
+        [SerializeField, ReadOnlyInPlayMode]
         private InitFlags _initAndClearCases = InitFlags.AwakeOnDestroy | InitFlags.OnEnableOnDisable;
         [SerializeField]
         private ExecuteFlags _startRefreshCase = ExecuteFlags.Update;
         [SerializeField]
         private ExecuteFlags _finishRefreshCase = ExecuteFlags.LateUpdate;
         [Header("Start color")]
-        [SerializeField]
+        [SerializeField, ReadOnlyInPlayMode]
         private bool _overrideDefaultColor = true;
-        [SerializeField]
+        [SerializeField, ReadOnlyInPlayMode]
         private Color _overriddenColor = Color.white;
 
         private readonly Queue<JobPaintAction> _cashedModifications = new Queue<JobPaintAction>();
@@ -27,6 +28,7 @@ namespace OmicronMeshColoring
         private Mesh _generatedMesh;
         private Mesh _defaultMesh;
         private NativeArray<float4> _colors;
+        private NativeArray<float4> _defaultColors;
         private NativeList<JobPaintAction> _modifications;
         private JobHandle? _handle;
 
@@ -42,12 +44,24 @@ namespace OmicronMeshColoring
                 _cashedModifications.Enqueue(JobPaintAction.FromColorModification(modification, transform));
         }
 
+        [ContextMenu(nameof(ResetToDefaultColors))]
+        public void ResetToDefaultColors()
+        {
+            if (_inited == false)
+                return;
+
+            ForceCompleteJobProcess();
+
+            _colors.CopyFrom(_defaultColors);
+            _generatedMesh.SetColors(_colors);
+        }
+
         public void ManualInit() => TryInit();
 
         public void ManualClear() => TryClear();
 
         /// <summary>
-        /// Clear and Init at the same place. Call it, for example, if you changed SkinnedMeshRenderer.sharedMesh at other place.
+        /// Clear and Init at the same place. Call it, for example, if you changed SkinnedMeshRenderer.sharedMesh from other place.
         /// </summary>
         public void ManualReInit()
         {
@@ -172,21 +186,33 @@ namespace OmicronMeshColoring
             MeshHolderPointer = _generatedMesh;
 
             _colors = new NativeArray<float4>(_generatedMesh.vertexCount, Allocator.Persistent);
+            _defaultColors = new NativeArray<float4>(_generatedMesh.vertexCount, Allocator.Persistent);
             _modifications = new NativeList<JobPaintAction>(Allocator.Persistent);
             OnIniting(_generatedMesh);
-
-            if (_overrideDefaultColor)
-                OverrideDefaultColor();
+            FillDefaultColors();
 
             _inited = true;
         }
 
-        private void OverrideDefaultColor()
+        private void FillDefaultColors()
         {
-            float4 defaultColor = new float4(_overriddenColor.r, _overriddenColor.g, _overriddenColor.b, _overriddenColor.a);
-            for (int i = 0; i < _colors.Length; i++)
-                _colors[i] = defaultColor;
+            if (_overrideDefaultColor)
+            {
+                float4 defaultColor = new float4(_overriddenColor.r, _overriddenColor.g, _overriddenColor.b, _overriddenColor.a);
+                for (int i = 0; i < _defaultColors.Length; i++)
+                    _defaultColors[i] = defaultColor;
+            }
+            else
+            {
+                using (Mesh.MeshDataArray dataArray = Mesh.AcquireReadOnlyMeshData(_generatedMesh))
+                {
+                    Mesh.MeshData data = dataArray[0];
+                    if (data.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Color))
+                        data.GetColors(_defaultColors.Reinterpret<Color>());
+                }
+            }
 
+            _colors.CopyFrom(_defaultColors);
             _generatedMesh.SetColors(_colors);
         }
 
@@ -275,6 +301,9 @@ namespace OmicronMeshColoring
 
             if (_colors.IsCreated)
                 _colors.Dispose();
+
+            if (_defaultColors.IsCreated)
+                _defaultColors.Dispose();
 
             if (_modifications.IsCreated)
                 _modifications.Dispose();

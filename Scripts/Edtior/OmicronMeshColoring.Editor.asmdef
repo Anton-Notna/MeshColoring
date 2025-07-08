@@ -1,0 +1,18 @@
+{
+    "name": "OmicronMeshColoring.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:38982c8a5e2be3341b95af20a7fbd34a"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
