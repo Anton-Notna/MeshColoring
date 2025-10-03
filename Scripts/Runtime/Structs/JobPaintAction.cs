@@ -9,6 +9,7 @@ namespace OmicronMeshColoring
         public float3 LocalPosition;
         public float MaxRadius;
         public float MinRadius;
+        public ColorMixType MixType;
 
         public static JobPaintAction FromColorModification(PaintAction modification, Transform relativeTo)
         {
@@ -22,6 +23,7 @@ namespace OmicronMeshColoring
                 LocalPosition = relativeTo.InverseTransformPoint(modification.WorldPosition),
                 MaxRadius = modification.MaxRadius / averageScale,
                 MinRadius = modification.MinRadius / averageScale,
+                MixType = modification.MixType,
             };
         }
     }

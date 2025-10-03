@@ -34,8 +34,16 @@ namespace OmicronMeshColoring
                 float distance = math.sqrt(distanceSq);
                 float intensity = math.remap(modification.MinRadius, modification.MaxRadius, 1f, 0f, distance);
                 intensity = math.clamp(intensity, 0f, 1f);
-                float4 delta = modification.Delta * intensity;
-                color += delta;
+
+                if (modification.MixType == ColorMixType.Additive)
+                {
+                    float4 delta = modification.Delta * intensity;
+                    color += delta;
+                }
+                else
+                {
+                    color = math.lerp(color, modification.Delta, intensity);
+                }
             }
 
             if (successModifications > 0)

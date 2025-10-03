@@ -1,7 +1,7 @@
 {
     "name": "com.omicronperson.meshcoloring",
     "displayName": "Omicron Mesh Coloring",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "In-game runtime vertex colors modification using Jobs. Supports MeshFilter, SkinnedMeshRenderer.",
     "unity": "2022.3",
     "dependencies":

@@ -9,8 +9,9 @@ namespace OmicronMeshColoring
         public float3 WorldPosition;
         public float MaxRadius;
         public float MinRadius;
+        public ColorMixType MixType;
 
-        public static PaintAction FromPoint(Color deltaColor, Vector3 position)
+        public static PaintAction FromPoint(Color deltaColor, Vector3 position, ColorMixType mixType = ColorMixType.Additive)
         {
             return new PaintAction()
             {
@@ -18,10 +19,11 @@ namespace OmicronMeshColoring
                 WorldPosition = position,
                 MaxRadius = 0f,
                 MinRadius = 0f,
+                MixType = mixType,
             };
         }
 
-        public static PaintAction FromSphere(Color deltaColor, Vector3 position, float radius)
+        public static PaintAction FromSphere(Color deltaColor, Vector3 position, float radius, ColorMixType mixType = ColorMixType.Additive)
         {
             radius = Mathf.Max(0f, radius);
 
@@ -31,6 +33,7 @@ namespace OmicronMeshColoring
                 WorldPosition = position,
                 MaxRadius = radius,
                 MinRadius = radius,
+                MixType = mixType,
             };
         }
 
@@ -45,6 +48,7 @@ namespace OmicronMeshColoring
                 WorldPosition = this.WorldPosition,
                 MaxRadius = maxRadius,
                 MinRadius = this.MinRadius,
+                MixType = this.MixType,
             };
         }
 
@@ -56,6 +60,7 @@ namespace OmicronMeshColoring
                 WorldPosition = this.WorldPosition,
                 MaxRadius = this.MaxRadius,
                 MinRadius = this.MinRadius,
+                MixType = this.MixType,
             };
         }
 
@@ -68,6 +73,7 @@ namespace OmicronMeshColoring
                 WorldPosition = this.WorldPosition,
                 MaxRadius = this.MaxRadius,
                 MinRadius = this.MinRadius,
+                MixType = this.MixType,
             };
         }
     }
