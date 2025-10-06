@@ -2,6 +2,9 @@
 
 ## Changelog
 
+### 1.2.2 (October 6, 2025)
++ Add blend shapes coping from default to modified mesh.
+
 ### 1.2.1 (October 6, 2025)
 + PaintAction.Intensity refactoring, better color blending.
 

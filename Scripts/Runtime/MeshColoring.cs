@@ -152,6 +152,27 @@ namespace OmicronMeshColoring
 
         #region Private methods
 
+        private static void CopyBlendShapes(Mesh source, Mesh target)
+        {
+            for (int shapeIndex = 0; shapeIndex < source.blendShapeCount; shapeIndex++)
+            {
+                string shapeName = source.GetBlendShapeName(shapeIndex);
+                int frameCount = source.GetBlendShapeFrameCount(shapeIndex);
+
+                for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
+                {
+                    float frameWeight = source.GetBlendShapeFrameWeight(shapeIndex, frameIndex);
+                    Vector3[] deltaVertices = new Vector3[source.vertexCount];
+                    Vector3[] deltaNormals = new Vector3[source.vertexCount];
+                    Vector3[] deltaTangents = new Vector3[source.vertexCount];
+
+                    source.GetBlendShapeFrameVertices(shapeIndex, frameIndex, deltaVertices, deltaNormals, deltaTangents);
+
+                    target.AddBlendShapeFrame(shapeName, frameWeight, deltaVertices, deltaNormals, deltaTangents);
+                }
+            }
+        }
+
         private void TryInit()
         {
             if (_inited)
@@ -183,6 +204,9 @@ namespace OmicronMeshColoring
                 boneWeights = _defaultMesh.boneWeights,
                 indexFormat = _defaultMesh.indexFormat,
             };
+
+            CopyBlendShapes(_defaultMesh, _generatedMesh);
+
             MeshHolderPointer = _generatedMesh;
 
             _colors = new NativeArray<float4>(_generatedMesh.vertexCount, Allocator.Persistent);
