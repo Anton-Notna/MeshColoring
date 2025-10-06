@@ -6,6 +6,7 @@ namespace OmicronMeshColoring
     public struct JobPaintAction
     {
         public float4 Delta;
+        public float Intensity;
         public float3 LocalPosition;
         public float MaxRadius;
         public float MinRadius;
@@ -20,6 +21,7 @@ namespace OmicronMeshColoring
             return new JobPaintAction()
             {
                 Delta = modification.Delta,
+                Intensity = modification.Intensity,
                 LocalPosition = relativeTo.InverseTransformPoint(modification.WorldPosition),
                 MaxRadius = modification.MaxRadius / averageScale,
                 MinRadius = modification.MinRadius / averageScale,

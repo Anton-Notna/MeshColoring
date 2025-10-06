@@ -6,6 +6,7 @@ namespace OmicronMeshColoring
     public struct PaintAction
     {
         public float4 Delta;
+        public float Intensity;
         public float3 WorldPosition;
         public float MaxRadius;
         public float MinRadius;
@@ -16,6 +17,7 @@ namespace OmicronMeshColoring
             return new PaintAction()
             {
                 Delta = new float4(deltaColor.r, deltaColor.g, deltaColor.b, deltaColor.a),
+                Intensity = 1f,
                 WorldPosition = position,
                 MaxRadius = 0f,
                 MinRadius = 0f,
@@ -30,6 +32,7 @@ namespace OmicronMeshColoring
             return new PaintAction()
             {
                 Delta = new float4(deltaColor.r, deltaColor.g, deltaColor.b, deltaColor.a),
+                Intensity = 1f,
                 WorldPosition = position,
                 MaxRadius = radius,
                 MinRadius = radius,
@@ -45,6 +48,7 @@ namespace OmicronMeshColoring
             return new PaintAction()
             {
                 Delta = this.Delta,
+                Intensity = this.Intensity,
                 WorldPosition = this.WorldPosition,
                 MaxRadius = maxRadius,
                 MinRadius = this.MinRadius,
@@ -57,6 +61,7 @@ namespace OmicronMeshColoring
             return new PaintAction()
             {
                 Delta = this.Delta * -1f,
+                Intensity = this.Intensity,
                 WorldPosition = this.WorldPosition,
                 MaxRadius = this.MaxRadius,
                 MinRadius = this.MinRadius,
@@ -66,10 +71,10 @@ namespace OmicronMeshColoring
 
         public PaintAction WithIntensity(float intensity)
         {
-            intensity = Mathf.Max(0f, intensity);
             return new PaintAction()
             {
-                Delta = this.Delta * intensity,
+                Delta = this.Delta,
+                Intensity = Mathf.Max(0f, intensity),
                 WorldPosition = this.WorldPosition,
                 MaxRadius = this.MaxRadius,
                 MinRadius = this.MinRadius,

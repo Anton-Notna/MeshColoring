@@ -32,17 +32,18 @@ namespace OmicronMeshColoring
 
                 successModifications += 1;
                 float distance = math.sqrt(distanceSq);
-                float intensity = math.remap(modification.MinRadius, modification.MaxRadius, 1f, 0f, distance);
-                intensity = math.clamp(intensity, 0f, 1f);
+                float distanceIntensity = math.remap(modification.MinRadius, modification.MaxRadius, 1f, 0f, distance);
+                distanceIntensity = math.clamp(distanceIntensity, 0f, 1f);
+                float totalIntensity = distanceIntensity * modification.Intensity;
 
                 if (modification.MixType == ColorMixType.Additive)
                 {
-                    float4 delta = modification.Delta * intensity;
+                    float4 delta = modification.Delta * totalIntensity;
                     color += delta;
                 }
                 else
                 {
-                    color = math.lerp(color, modification.Delta, intensity);
+                    color = math.lerp(color, modification.Delta, totalIntensity);
                 }
             }
 
