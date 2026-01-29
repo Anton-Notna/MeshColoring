@@ -11,8 +11,9 @@ namespace OmicronMeshColoring
         public float MaxRadius;
         public float MinRadius;
         public ColorMixType MixType;
+        public AttributeType AttributeType;
 
-        public static PaintAction FromPoint(Color deltaColor, Vector3 position, ColorMixType mixType = ColorMixType.Additive)
+        public static PaintAction FromPoint(Color deltaColor, Vector3 position, ColorMixType mixType = ColorMixType.Additive, AttributeType attributeType = AttributeType.VertexColor)
         {
             return new PaintAction()
             {
@@ -22,10 +23,11 @@ namespace OmicronMeshColoring
                 MaxRadius = 0f,
                 MinRadius = 0f,
                 MixType = mixType,
+                AttributeType = attributeType,
             };
         }
 
-        public static PaintAction FromSphere(Color deltaColor, Vector3 position, float radius, ColorMixType mixType = ColorMixType.Additive)
+        public static PaintAction FromSphere(Color deltaColor, Vector3 position, float radius, ColorMixType mixType = ColorMixType.Additive, AttributeType attributeType = AttributeType.VertexColor)
         {
             radius = Mathf.Max(0f, radius);
 
@@ -37,6 +39,7 @@ namespace OmicronMeshColoring
                 MaxRadius = radius,
                 MinRadius = radius,
                 MixType = mixType,
+                AttributeType = attributeType,
             };
         }
 
@@ -53,6 +56,7 @@ namespace OmicronMeshColoring
                 MaxRadius = maxRadius,
                 MinRadius = this.MinRadius,
                 MixType = this.MixType,
+                AttributeType = this.AttributeType,
             };
         }
 
@@ -66,6 +70,7 @@ namespace OmicronMeshColoring
                 MaxRadius = this.MaxRadius,
                 MinRadius = this.MinRadius,
                 MixType = this.MixType,
+                AttributeType = this.AttributeType,
             };
         }
 
@@ -79,6 +84,21 @@ namespace OmicronMeshColoring
                 MaxRadius = this.MaxRadius,
                 MinRadius = this.MinRadius,
                 MixType = this.MixType,
+                AttributeType = this.AttributeType,
+            };
+        }
+
+        public PaintAction WriteTo(AttributeType attributeType)
+        {
+            return new PaintAction()
+            {
+                Delta = this.Delta,
+                Intensity = this.Intensity,
+                WorldPosition = this.WorldPosition,
+                MaxRadius = this.MaxRadius,
+                MinRadius = this.MinRadius,
+                MixType = this.MixType,
+                AttributeType = attributeType,
             };
         }
     }

@@ -2,6 +2,9 @@
 
 ## Changelog
 
+### 1.3.0 (January 29, 2026)
++ Add support for UV1-UV7 channels. Minor optimizations.
+
 ### 1.2.2 (October 6, 2025)
 + Add blend shapes coping from default to modified mesh.
 

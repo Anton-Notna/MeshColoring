@@ -4,6 +4,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace OmicronMeshColoring
 {
@@ -16,23 +17,25 @@ namespace OmicronMeshColoring
         private ExecuteFlags _startRefreshCase = ExecuteFlags.Update;
         [SerializeField]
         private ExecuteFlags _finishRefreshCase = ExecuteFlags.LateUpdate;
+        [SerializeField, ReadOnlyInPlayMode]
+        private List<AttributeType> _subAttributes;
+
         [Header("Start color")]
         [SerializeField, ReadOnlyInPlayMode]
         private bool _overrideDefaultColor = true;
         [SerializeField, ReadOnlyInPlayMode]
         private Color _overriddenColor = Color.white;
 
-        private readonly Queue<JobPaintAction> _cashedModifications = new Queue<JobPaintAction>();
-
         private bool _inited;
         private Mesh _generatedMesh;
         private Mesh _defaultMesh;
-        private NativeArray<float4> _colors;
+        private MeshColoringWorkers _workers;
         private NativeArray<float4> _defaultColors;
-        private NativeList<JobPaintAction> _modifications;
         private JobHandle? _handle;
 
         public bool Inited => _inited;
+
+        public bool Processing => _handle.HasValue;
 
         protected abstract Mesh MeshHolderPointer { get; set; }
 
@@ -40,8 +43,13 @@ namespace OmicronMeshColoring
 
         public void Paint(PaintAction modification)
         {
-            if (_inited)
-                _cashedModifications.Enqueue(JobPaintAction.FromColorModification(modification, transform));
+            if (_inited == false)
+                return;
+
+            if (_workers.Paint(modification, transform))
+                return;
+
+            Debug.LogWarning($"MeshColoring doesn't contains \"{modification.AttributeType}\" AttributeType in \"subAttributes\" field.", this);
         }
 
         [ContextMenu(nameof(ResetToDefaultColors))]
@@ -52,8 +60,7 @@ namespace OmicronMeshColoring
 
             ForceCompleteJobProcess();
 
-            _colors.CopyFrom(_defaultColors);
-            _generatedMesh.SetColors(_colors);
+            _workers.ResetToDefaultColors(_generatedMesh, _defaultColors);
         }
 
         public void ManualInit() => TryInit();
@@ -205,13 +212,14 @@ namespace OmicronMeshColoring
                 indexFormat = _defaultMesh.indexFormat,
             };
 
+            _generatedMesh.MarkDynamic();
+
             CopyBlendShapes(_defaultMesh, _generatedMesh);
 
             MeshHolderPointer = _generatedMesh;
 
-            _colors = new NativeArray<float4>(_generatedMesh.vertexCount, Allocator.Persistent);
+            _workers = new MeshColoringWorkers(_generatedMesh.vertexCount, _subAttributes);
             _defaultColors = new NativeArray<float4>(_generatedMesh.vertexCount, Allocator.Persistent);
-            _modifications = new NativeList<JobPaintAction>(Allocator.Persistent);
             OnIniting(_generatedMesh);
             FillDefaultColors();
 
@@ -231,13 +239,12 @@ namespace OmicronMeshColoring
                 using (Mesh.MeshDataArray dataArray = Mesh.AcquireReadOnlyMeshData(_generatedMesh))
                 {
                     Mesh.MeshData data = dataArray[0];
-                    if (data.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Color))
+                    if (data.HasVertexAttribute(VertexAttribute.Color))
                         data.GetColors(_defaultColors.Reinterpret<Color>());
                 }
             }
 
-            _colors.CopyFrom(_defaultColors);
-            _generatedMesh.SetColors(_colors);
+            _workers.ResetToDefaultColors(_generatedMesh, _defaultColors);
         }
 
         private void TryStartJob()
@@ -248,7 +255,7 @@ namespace OmicronMeshColoring
             if (_handle.HasValue)
                 return;
 
-            if (_cashedModifications.Count == 0)
+            if (_workers.ComputeDirtiness() == false)
                 return;
 
             StartJob();
@@ -256,18 +263,8 @@ namespace OmicronMeshColoring
 
         private void StartJob()
         {
-            _modifications.Clear();
-            while (_cashedModifications.Count > 0)
-                _modifications.Add(_cashedModifications.Dequeue());
-
             OnBeforeJobStart();
-
-            _handle = new PaintActionsApplyJob()
-            {
-                Colors = _colors,
-                LocalPositions = GetLocalBackedPositions(),
-                Modifications = _modifications,
-            }.Schedule(_colors.Length, Settings.ThreadsCount);
+            _handle = _workers.StartJob(GetLocalBackedPositions());
         }
 
         private void TryFinishJob()
@@ -287,7 +284,8 @@ namespace OmicronMeshColoring
         private void FinishJob()
         {
             ForceCompleteJobProcess();
-            _generatedMesh.SetColors(_colors);
+            _workers.ApplyModifications(_generatedMesh);
+
         }
 
         private void ForceCompleteJobProcess()
@@ -311,9 +309,6 @@ namespace OmicronMeshColoring
         {
             ForceCompleteJobProcess();
 
-            if (_cashedModifications.Count > 0)
-                _cashedModifications.Clear();
-
             if (_defaultMesh != null && MeshHolderPointer == _generatedMesh)
                 MeshHolderPointer = _defaultMesh;
 
@@ -323,14 +318,14 @@ namespace OmicronMeshColoring
                 _generatedMesh = null;
             }
 
-            if (_colors.IsCreated)
-                _colors.Dispose();
-
             if (_defaultColors.IsCreated)
                 _defaultColors.Dispose();
 
-            if (_modifications.IsCreated)
-                _modifications.Dispose();
+            if (_workers != null)
+            {
+                _workers.Dispose();
+                _workers = null;
+            }
 
             OnClearing();
 
